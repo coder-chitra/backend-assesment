@@ -92,7 +92,7 @@ app.post("/login", async (req, res) => {
                     }
                 } else {
                     try {
-                        const update_query = `UPDATE users SET pswcnt = $1 , isblock = true where username = $2;`;
+                        const update_query = `UPDATE users SET pswcnt = $1  where username = $2;`;
                         let updated = await pool.query(update_query, [pswcnt, username]);
                     } catch (error) {
                         console.log("Unable to update cnt");
