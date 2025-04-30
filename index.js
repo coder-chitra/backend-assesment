@@ -5,6 +5,7 @@ const { Pool } = require("pg");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { get } = require("http");
+const { couldStartTrivia } = require("typescript");
 
 const app = express();
 const port = 8080;
@@ -74,16 +75,6 @@ app.post("/login", async (req, res) => {
             res.redirect("/home/" + username);
         } else {
 
-            try {
-                // check if user id block or not
-                let block_query = `SELECT isblock from users where username= $1`;
-                let result = await pool.query(block_query, [username]);
-                if (result.rows[0].isblock == true) {
-                    console.log("User is Block");
-                }
-            } catch {
-                console.log("unable to get block status")
-            }
 
             const getPasswordCnt = 'SELECT pswcnt FROM users WHERE username = $1';
             // getting the password count 
@@ -119,9 +110,24 @@ app.post("/login", async (req, res) => {
 });
 
 
-app.get("/home/:user", (req, res) => {
-    let user = req.params.user;
-    res.send(`Welcome ${user}`);
+app.get("/home/:user", async (req, res) => {
+
+    let username = req.params.user;
+
+    try {
+        // check if user id block or not
+        let block_query = `SELECT isblock from users where username= $1`;
+        let result = await pool.query(block_query, [username]);
+        console.log(result.rows[0].isblock);
+        if (result.rows[0].isblock == true) {
+            res.send("User is Block");
+        }
+        else {
+            res.send(`Welcome ${username}`);
+        }
+    } catch {
+        res.send(`Welcome ${username}`);
+    }
 })
 
 app.listen(port, () => {
