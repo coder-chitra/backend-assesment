@@ -3,9 +3,6 @@ const express = require("express");
 const { Pool } = require("pg");
 // const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const { get } = require("http");
-const { couldStartTrivia } = require("typescript");
 
 const app = express();
 const port = 8080;
@@ -25,57 +22,37 @@ const pool = new Pool({
     max: 10
 });
 
-// home route
-app.get("/", (req, res) => {
-    res.render("home.ejs");
-});
-
-// getData Route
-app.get("/register", (req, res) => {
-    res.render("getUser.ejs");
-});
-
 // resgistration route
 app.post("/register", async (req, res) => {
     const { username, email, password } = req.body;
 
     // hasing of pass
-    // const hashedPassword = await bcrypt.hash(password, 10);
-    // const match = await bcrypt.compare(password, hashedPassword);
-    // const accessToken = jwt.sign(JSON.stringify(user), process.env.TOKEN_SECRET);
-    // console.log(match);
-    // console.log(hashedPassword);
-
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const match = await bcrypt.compare(password, hashedPassword);
+    console.log(match);
+    console.log(hashedPassword);
 
     const insert_query = 'INSERT INTO users(username , email , password) VALUES ($1,$2,$3)';
     try {
-        await pool.query(insert_query, [username, email, password]);
+        await pool.query(insert_query, [username, email, hashedPassword]);
         res.send("Data Inserted Successfully");
     } catch (error) {
         res.send("Username or Email Already Exits");
     }
 });
 
-// login get info route 
-app.get("/login", (req, res) => {
-    res.render("getLoginInfo.ejs");
-});
-
 // login route
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
-
     try {
         const fetch_query = 'SELECT password FROM users WHERE username = $1';
         const result = await pool.query(fetch_query, [username]);
-        if (result.rows.length == 0) {
+        if (result.rows.length == 0) { // username not present means user not exits 
             res.send("User doesn't exits , Register 1st and then login ");
         }
-        else if (result.rows[0].password === password) {
+        else if (await bcrypt.compare(password, result.rows[0].password)) { // comparing password with hashed password in database
             res.redirect("/home/" + username);
-        } else {
-
-
+        } else { // condition of wrong password entered
             const getPasswordCnt = 'SELECT pswcnt FROM users WHERE username = $1';
             // getting the password count 
             try {
@@ -85,7 +62,7 @@ app.post("/login", async (req, res) => {
                 // updating count as attempt failed
                 if (pswcnt >= 5) {
                     try {
-                        const update_query = `UPDATE users SET pswcnt = $1 where username = $2`;
+                        const update_query = `UPDATE users SET pswcnt = $1 , isblock = true where username = $2`;
                         let updated = await pool.query(update_query, [pswcnt, username]);
                     } catch (error) {
                         console.log("Unable to update cnt");
@@ -98,18 +75,17 @@ app.post("/login", async (req, res) => {
                         console.log("Unable to update cnt");
                     }
                 }
-
             } catch (error) {
                 console.log("unable to get count");
             }
             res.send("Wrong Password Entered");
         }
     } catch (error) {
-        res.send("Unable to login");
+        res.status(500).send("Unable to login due to internal server error");
     }
 });
 
-
+// home route to welcome user
 app.get("/home/:user", async (req, res) => {
 
     let username = req.params.user;
@@ -118,15 +94,9 @@ app.get("/home/:user", async (req, res) => {
         // check if user id block or not
         let block_query = `SELECT isblock from users where username= $1`;
         let result = await pool.query(block_query, [username]);
-        console.log(result.rows[0].isblock);
-        if (result.rows[0].isblock == true) {
-            res.send("User is Block");
-        }
-        else {
-            res.send(`Welcome ${username}`);
-        }
+        return res.send(result.rows[0].isblock ? "User is Block" : `Welcome ${username}`);
     } catch {
-        res.send(`Welcome ${username}`);
+        res.status(500).send(`Internal Sever Error During login`);
     }
 })
 
