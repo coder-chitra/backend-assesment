@@ -1,4 +1,4 @@
-# User Authentication System (Node.js + PostgreSQL)
+# User Authentication Using (Node.js + PostgreSQL)
 
 This project implements a basic user authentication system using Node.js and PostgreSQL.
 
@@ -12,35 +12,40 @@ This project implements a basic user authentication system using Node.js and Pos
 
 ## Database Structure
 
-### Table: `users`
-Stores user credentials and info.
-             Table "public.users"
- Column   |   Type   | Collation | Nullable | Default 
-----------+----------+-----------+----------+---------
- username | text     |           | not null | 
- email    | text     |           | not null | 
- password | text     |           | not null | 
- pswcnt   | integer  |           |          | 0
- isblock  | boolean  |           |          | false
+### Table: `users`;
+
+Stores user credentials and info. <br>
+
+```
+                Table "public.users"
+  Column  |  Type   | Collation | Nullable | Default
+----------+---------+-----------+----------+---------
+ username | text    |           | not null |
+ email    | text    |           | not null |
+ password | text    |           | not null |
+ pswcnt   | integer |           |          | 0
+ isblock  | boolean |           |          | false
 Indexes:
     "users_pkey" PRIMARY KEY, btree (username)
     "users_email_key" UNIQUE, btree (email)
     "users_username_key" UNIQUE, btree (username)
 Referenced by:
-    TABLE "users_login_details" CONSTRAINT "users_login_details_username_fkey"
-    FOREIGN KEY (username) REFERENCES users(username)
+    TABLE "users_login_details" CONSTRAINT "users_login_details_username_fkey" FOREIGN KEY (username) REFERENCES users(username)
+```
 
 
 ### Table: `user_login_details`
-             Table "public.users_login_details"
-      Column        |            Type             | Nullable | Default 
---------------------+-----------------------------+----------+---------
- username           | character varying(30)       |          | 
- user_login_time    | timestamp without time zone |          | 
- user_login_status  | boolean                     |          | 
+```
+                        Table "public.users_login_details"
+      Column       |            Type             | Collation | Nullable | Default
+-------------------+-----------------------------+-----------+----------+---------
+ username          | character varying(30)       |           |          |
+ user_login_time   | timestamp without time zone |           |          |
+ user_login_status | boolean                     |           |          |
 Foreign-key constraints:
-    "users_login_details_username_fkey"
-    FOREIGN KEY (username) REFERENCES users(username)
+    "users_login_details_username_fkey" FOREIGN KEY (username) REFERENCES users(username)
+
+```
 
 
 **Relationship:**  
